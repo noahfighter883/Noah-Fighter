@@ -2,7 +2,7 @@
 This repository showcases my applied programming projects across sports analytics, probability modeling, and algorithmic simulation.
 Each project demonstrates my ability to design data-driven logic, optimize for performance, and build adaptable tools for real-world decision making.
 
-Languages: C, Java,
+Languages: C, Java, Python
 
 Core Skills: algorithm design, data modeling, OOP, simulation logic, weighted projection systems
 
