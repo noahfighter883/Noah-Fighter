@@ -1,0 +1,255 @@
+// RBRushingProjections.java
+// Compile: javac RBRushingProjections.java
+// Run:     java RBRushingProjections
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+public class RBRushingProjections {
+
+    // ======= TUNABLE WEIGHTS / CONSTANTS =======
+    // Base blend between sportsbook line and season avg
+    public static double BASE_WEIGHT_LINE = 0.60;
+    public static double BASE_WEIGHT_SEASON = 0.40;
+
+    // Spread (favorites -> more rush volume). Clamp effect at +/-SPREAD_CAP points.
+    public static double W_SPREAD = 0.12;
+    public static double SPREAD_CAP = 10.0;  // only count up to +/-10 pts of spread
+
+    // Defense vs run (opp rush yards allowed vs league baseline)
+    public static double W_DEF_RUN = 0.18;
+    public static double LEAGUE_BASELINE_RUSH_YPG_ALLOWED = 112.0;
+    public static double DEF_DELTA_CAP = 50.0;
+
+    // Game total O/U (small effect)
+    public static double W_TOTAL = 0.06;
+    public static double LEAGUE_BASELINE_TOTAL = 44.5;
+    public static double TOTAL_DELTA_CAP = 12.0;
+
+    // Team rush rate vs league avg
+    public static double W_TEAM_RUSH_RATE = 0.14;
+    public static double LEAGUE_RUSH_RATE = 0.44; // rushing attempts / plays (approx.)
+
+    // QB carry siphon (mobile QB steals attempts)
+    public static double W_QB_SIPHON = 0.10; // penalty weight (higher qb carries -> more penalty)
+    public static double QB_CARRIES_DELTA_CAP = 6.0; // cap vs league avg carries by QB
+
+    // O-line run block grade delta (e.g., PFF-style; center ~60 league avg). Use delta/scale.
+    public static double W_OLINE = 0.10;
+    public static double OLINE_DELTA_SCALE = 10.0; // 10 grade points ~= 1.0 normalized
+
+    // Weather: slight run-lean boost in bad weather
+    public static double BONUS_RAIN = 0.03; // +3%
+    public static double BONUS_SNOW = 0.04; // +4%
+    public static int[] WIND_THRESH = {0, 10, 15, 20, 25, 30};
+    public static double[] WIND_BOOST = {0.00, 0.01, 0.02, 0.03, 0.04, 0.05}; // up to +5%
+
+    // Safety caps on final multiplier
+    public static double MIN_MULTIPLIER = 0.70;
+    public static double MAX_MULTIPLIER = 1.45;
+
+    // ======= INPUTS =======
+    public static class Inputs {
+        public String rbName = "Example RB";
+        public double sportsbookLine = 68.5;       // rushing yards line
+        public double seasonAvgRushYds = 64.2;     // season avg rushing yards
+
+        public double spread = +3.0;               // positive = favorite; negative = underdog
+        public double gameTotalOU = 44.5;
+
+        public double oppRushYdsAllowed = 118.0;   // opponent rush yards allowed per game
+
+        public double teamRushRate = 0.46;         // team rush attempts share (0..1)
+        public double qbCarriesPerGame = 5.0;      // QB carries per game (higher -> more siphon)
+        public double leagueAvgQBCarries = 3.0;    // league baseline
+
+        public double olineRunBlockGrade = 65.0;   // your OL composite (e.g., 0-100)
+        public double leagueOLineRunBlockAvg = 60.0;
+
+        // Weather
+        public boolean isRain = false;
+        public boolean isSnow = false;
+        public double windMph = 0.0;
+
+        public Inputs set(String rbName,
+                          double sportsbookLine,
+                          double seasonAvgRushYds,
+                          double spread,
+                          double gameTotalOU,
+                          double oppRushYdsAllowed,
+                          double teamRushRate,
+                          double qbCarriesPerGame,
+                          double leagueAvgQBCarries,
+                          double olineRunBlockGrade,
+                          double leagueOLineRunBlockAvg,
+                          boolean isRain,
+                          boolean isSnow,
+                          double windMph) {
+            this.rbName = rbName;
+            this.sportsbookLine = sportsbookLine;
+            this.seasonAvgRushYds = seasonAvgRushYds;
+            this.spread = spread;
+            this.gameTotalOU = gameTotalOU;
+            this.oppRushYdsAllowed = oppRushYdsAllowed;
+            this.teamRushRate = teamRushRate;
+            this.qbCarriesPerGame = qbCarriesPerGame;
+            this.leagueAvgQBCarries = leagueAvgQBCarries;
+            this.olineRunBlockGrade = olineRunBlockGrade;
+            this.leagueOLineRunBlockAvg = leagueOLineRunBlockAvg;
+            this.isRain = isRain;
+            this.isSnow = isSnow;
+            this.windMph = windMph;
+            return this;
+        }
+    }
+
+    // ======= RESULT =======
+    public static class Result {
+        public String rb;
+        public double projection;
+        public double baseYards;
+        public double finalMultiplier;
+        public double uncappedMultiplier;
+        public Map<String, Double> components = new LinkedHashMap<>();
+
+        @Override public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("RB: ").append(rb).append("\n");
+            sb.append("Base Yards: ").append(r1(baseYards)).append("\n");
+            sb.append("Projection: ").append(r1(projection)).append("\n");
+            sb.append("Final Multiplier: ").append(r4(finalMultiplier))
+              .append(" (uncapped ").append(r4(uncappedMultiplier)).append(")\n");
+            sb.append("Components:\n");
+            for (var e : components.entrySet()) {
+                sb.append("  ").append(e.getKey()).append(": ").append(r4(e.getValue())).append("\n");
+            }
+            return sb.toString();
+        }
+    }
+
+    // ======= MODEL =======
+    private final Inputs inp;
+    public RBRushingProjections(Inputs inputs) { this.inp = inputs; }
+
+    public Result project() {
+        double base = baseYards();
+        double mSpread = spreadMultiplier();
+        double mDef = defenseMultiplier();
+        double mTotal = totalMultiplier();
+        double mRushRate = rushRateMultiplier();
+        double mQbSiphon = qbSiphonMultiplier();
+        double mOline = olineMultiplier();
+        double mWeather = weatherMultiplier();
+
+        double raw = mSpread * mDef * mTotal * mRushRate * mQbSiphon * mOline * mWeather;
+        double fin = clamp(raw, MIN_MULTIPLIER, MAX_MULTIPLIER);
+        double proj = base * fin;
+
+        Result r = new Result();
+        r.rb = inp.rbName;
+        r.baseYards = base;
+        r.projection = proj;
+        r.finalMultiplier = fin;
+        r.uncappedMultiplier = raw;
+        r.components.put("spread_multiplier", mSpread);
+        r.components.put("def_run_multiplier", mDef);
+        r.components.put("total_multiplier", mTotal);
+        r.components.put("team_rush_rate_multiplier", mRushRate);
+        r.components.put("qb_siphon_multiplier", mQbSiphon);
+        r.components.put("oline_multiplier", mOline);
+        r.components.put("weather_multiplier", mWeather);
+        return r;
+    }
+
+    private double baseYards() {
+        return BASE_WEIGHT_LINE * inp.sportsbookLine
+             + BASE_WEIGHT_SEASON * inp.seasonAvgRushYds;
+    }
+
+    private double spreadMultiplier() {
+        // Positive spread (favorite) -> run more late -> boost
+        double c = clamp(inp.spread, -SPREAD_CAP, SPREAD_CAP);
+        double norm = c / SPREAD_CAP; // -1..+1; +1 = heavy favorite
+        return 1.0 + norm * W_SPREAD;
+    }
+
+    private double defenseMultiplier() {
+        double delta = inp.oppRushYdsAllowed - LEAGUE_BASELINE_RUSH_YPG_ALLOWED;
+        delta = clamp(delta, -DEF_DELTA_CAP, DEF_DELTA_CAP);
+        double norm = delta / DEF_DELTA_CAP; // -1..+1
+        return 1.0 + norm * W_DEF_RUN;
+    }
+
+    private double totalMultiplier() {
+        double delta = inp.gameTotalOU - LEAGUE_BASELINE_TOTAL;
+        delta = clamp(delta, -TOTAL_DELTA_CAP, TOTAL_DELTA_CAP);
+        double norm = delta / TOTAL_DELTA_CAP;
+        return 1.0 + norm * W_TOTAL;
+    }
+
+    private double rushRateMultiplier() {
+        if (LEAGUE_RUSH_RATE <= 0) return 1.0;
+        double rel = (inp.teamRushRate - LEAGUE_RUSH_RATE) / LEAGUE_RUSH_RATE; // relative diff
+        return 1.0 + rel * W_TEAM_RUSH_RATE;
+    }
+
+    private double qbSiphonMultiplier() {
+        // If QB carries > league avg, apply a penalty; if less, slight boost.
+        double delta = inp.qbCarriesPerGame - inp.leagueAvgQBCarries;
+        delta = clamp(delta, -QB_CARRIES_DELTA_CAP, QB_CARRIES_DELTA_CAP);
+        double norm = delta / QB_CARRIES_DELTA_CAP; // -1..+1
+        // More carries by QB (positive norm) -> reduce RB projection
+        return 1.0 - Math.max(0.0, norm) * W_QB_SIPHON
+                     + Math.min(0.0, norm) * (W_QB_SIPHON * 0.5); // small boost if QB is immobile
+    }
+
+    private double olineMultiplier() {
+        double delta = inp.olineRunBlockGrade - inp.leagueOLineRunBlockAvg;
+        double norm = delta / OLINE_DELTA_SCALE; // +/-10 grade -> +/-1.0 normalized
+        // soften by tanh-like clamp
+        norm = clamp(norm, -1.0, 1.0);
+        return 1.0 + norm * W_OLINE;
+    }
+
+    private double weatherMultiplier() {
+        double mult = 1.0;
+        if (inp.isRain) mult *= (1.0 + BONUS_RAIN);
+        if (inp.isSnow) mult *= (1.0 + BONUS_SNOW);
+        // Wind boosts run lean slightly
+        double windBoost = 0.0;
+        for (int i = 0; i < WIND_THRESH.length; i++) {
+            if (inp.windMph >= WIND_THRESH[i]) windBoost = WIND_BOOST[i];
+        }
+        mult *= (1.0 + windBoost);
+        return mult;
+    }
+
+    // ======= HELPERS =======
+    private static double clamp(double x, double lo, double hi) { return Math.max(lo, Math.min(hi, x)); }
+    private static String r1(double x) { return String.format(java.util.Locale.US, "%.1f", x); }
+    private static String r4(double x) { return String.format(java.util.Locale.US, "%.4f", x); }
+
+    // ======= DEMO =======
+    public static void main(String[] args) {
+        Inputs in = new Inputs().set(
+            "Sample RB",
+            68.5,   // sportsbook rushing yards line
+            64.2,   // season avg rushing yards
+            +3.0,   // spread (favorite)
+            44.5,   // game total O/U
+            118.0,  // opponent rush yards allowed per game
+            0.46,   // team rush rate
+            5.0,    // QB carries per game
+            3.0,    // league avg QB carries
+            65.0,   // OL run block grade
+            60.0,   // league avg OL run block
+            false,  // rain
+            false,  // snow
+            12.0    // wind mph
+        );
+
+        RBRushingProjections model = new RBRushingProjections(in);
+        Result r = model.project();
+        System.out.println(r);
+    }
+}
