@@ -1,6 +1,6 @@
 # Noah Fighter
 
-Computer Science student focused on sports analytics, projection modeling, and performance-oriented software systems.
+Computer Science student building data-driven sports analytics models and performance-focused software systems.
 
 ---
 
