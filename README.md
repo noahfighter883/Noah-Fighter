@@ -1,46 +1,50 @@
 # Noah Fighter
 
-Computer Science student building data-driven sports analytics models and performance-focused software systems.
+UX/UI designer and data-driven problem solver. Computer Science major (minoring in Math and Economics) at Skidmore College, currently studying abroad in Barcelona and working as a Product Design & UX Intern at IL-Team Studio.
+
+**Full portfolio, case studies, and resume:** [noahfighter883.github.io](https://noahfighter883.github.io)
 
 ---
 
 ## Featured Projects
 
-### NBA Assists Predictor (C)
-C-based projection engine that forecasts NBA player assists by blending sportsbook lines, recent potential assists, pace, and team context.  
-→ https://github.com/noahfighter883/nba-assists-predictor
+### Registrar: Course Registration Redesign
+UX/UI case study redesigning a Banner-style college registration system end to end, from a heuristic-evaluation audit to a fully interactive Next.js prototype that fixes broken filters, ambiguous validation states, and buried information.
+[Live site](https://registrar-ux-redesign.vercel.app) · [Code](https://github.com/noahfighter883/registrar-ux-redesign)
 
-### NBA Points Model (C)
-Statistical scoring model in C that estimates NBA player point totals using betting lines, season averages, pace adjustments, and defense-versus-position metrics.  
-→ https://github.com/noahfighter883/nba-points-model
+### DynastyEvaluator
+A fantasy football analytics dashboard for dynasty leagues. Plug in a Sleeper league and it ranks every team by dynasty value, redraft value, or projected points, broken down by position.
+[Live site](https://dynasty-fantasy-football-dashboard.vercel.app) · [Code](https://github.com/noahfighter883/DynastyFantasyFootballDashboard)
 
-### NFL Receiver Projections (Python)
-Python-based projection system that integrates sportsbook lines, game script assumptions, weather variables, and defensive matchups to forecast wide receiver performance.  
-→ https://github.com/noahfighter883/nfl-receiver-projections
+### NFL Win Probability Model
+An XGBoost model trained from scratch on 166k plays of NFL data (0.845 AUC), paired with an interactive React replay of five of the most dramatic games in recent seasons.
+[Live site](https://nfl-win-probability.vercel.app) · [Code](https://github.com/noahfighter883/nfl-win-probability)
 
-### CBB Win Probability Model (Java)
-Java win-probability model that estimates college basketball outcomes using NET, SOR, adjusted efficiencies, and quadrant performance data.  
-→ https://github.com/noahfighter883/cbb-win-probability-model
+### Line Board
+Finds mispriced fantasy football players by comparing two independent markets, Vegas season-long props and fantasy draft ADP, and surfaces the gap between them as a ranked board.
+[Live site](https://line-board-ten.vercel.app) · [Code](https://github.com/noahfighter883/LineBoard)
 
-### Blackjack Simulation (Java)
-Object-oriented Java console application simulating blackjack with full support for splits, doubles, dealer logic, and bankroll management.  
-→ https://github.com/noahfighter883/blackjack-simulation
+### What Actually Pays Off in a Developer Career
+An interactive breakdown of the 2025 Stack Overflow Developer Survey (49,191 respondents), built around findings that go beyond the usual "AI is changing everything" takes.
+[Live site](https://dev-path-report.vercel.app) · [Code](https://github.com/noahfighter883/dev-path-report)
 
-### Sudoku Solver (Python)
-Constraint-satisfaction solver implementing recursive backtracking with row, column, and subgrid validation for standard 9x9 Sudoku puzzles.  
-→ https://github.com/noahfighter883/sudoku-solver
+### Olist E-Commerce SQL Analytics
+100k Brazilian e-commerce orders analyzed in pure SQL: revenue trends, RFM segmentation, and how delivery delays tank review scores.
+[Code](https://github.com/noahfighter883/olist-ecommerce-sql-analytics)
+
+More sports models (win-probability and projection systems for CBB, NBA, and NFL) are on my [repositories page](https://github.com/noahfighter883?tab=repositories).
 
 ---
 
-## Technical Focus
+## Skills
 
-Languages: C, Python, Java  
-Interests: Sports analytics, statistical modeling, probability systems, performance-focused engineering
+**Design:** Figma, high-fidelity prototyping, wireframing, competitive UX analysis, design systems
+**Technical:** React, Next.js, TypeScript, Python, SQL, Git/GitHub, Vercel
 
 ---
 
 ## Contact
 
-Email: noahfighter@skidmore.edu  
-GitHub: https://github.com/noahfighter883
-Linkedin: www.linkedin.com/in/noah-fighter-b62130341
+Email: noahfighter@skidmore.edu
+LinkedIn: [noah-fighter-b62130341](https://www.linkedin.com/in/noah-fighter-b62130341)
+Portfolio: [noahfighter883.github.io](https://noahfighter883.github.io)
