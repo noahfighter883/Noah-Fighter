@@ -12,6 +12,10 @@ UX/UI designer and data-driven problem solver. Computer Science major (minoring 
 UX/UI case study redesigning a Banner-style college registration system end to end, from a heuristic-evaluation audit to a fully interactive Next.js prototype that fixes broken filters, ambiguous validation states, and buried information.
 [Live site](https://registrar-ux-redesign.vercel.app) · [Code](https://github.com/noahfighter883/registrar-ux-redesign)
 
+### MyRefills: Prescription Refill & Care Navigation
+UX/UI case study redesigning prescription refills for elderly patients and their caregivers, grounded in Medicare Part D adherence research and Pew tech-adoption data. Iterated on real usability-testing findings and holds a 100/100 Lighthouse accessibility score across every screen.
+[Live site](https://prescription-refill-ux.vercel.app) · [Code](https://github.com/noahfighter883/prescription-refill-ux)
+
 ### DynastyEvaluator
 A fantasy football analytics dashboard for dynasty leagues. Plug in a Sleeper league and it ranks every team by dynasty value, redraft value, or projected points, broken down by position.
 [Live site](https://dynasty-fantasy-football-dashboard.vercel.app) · [Code](https://github.com/noahfighter883/DynastyFantasyFootballDashboard)
